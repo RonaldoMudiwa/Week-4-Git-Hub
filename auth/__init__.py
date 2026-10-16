@@ -5,7 +5,16 @@ Sign up, log in and permissions, with passwords stored safely.
     from auth import PBKDF2Hasher, PasswordPolicy
 """
 
-from .exceptions import AuthError, ValidationError, WeakPasswordError
+from .database import Database
+from .exceptions import (
+    AuthError,
+    DatabaseError,
+    DuplicateError,
+    NotFoundError,
+    UserNotFoundError,
+    ValidationError,
+    WeakPasswordError,
+)
 from .password_rules import (
     HasDigit,
     HasLowercase,
@@ -19,10 +28,16 @@ from .password_rules import (
     PasswordRule,
 )
 from .passwords import PasswordHasher, PBKDF2Hasher
+from .user import User
+from .users import SQLiteUserRepository, UserRepository
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
+    "User",
+    "UserRepository",
+    "SQLiteUserRepository",
+    "Database",
     "PasswordHasher",
     "PBKDF2Hasher",
     "PasswordPolicy",
@@ -38,5 +53,9 @@ __all__ = [
     "AuthError",
     "ValidationError",
     "WeakPasswordError",
+    "NotFoundError",
+    "UserNotFoundError",
+    "DuplicateError",
+    "DatabaseError",
     "__version__",
 ]

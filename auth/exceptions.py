@@ -24,3 +24,19 @@ class WeakPasswordError(ValidationError):
     def __init__(self, problems: list[str]) -> None:
         self.problems = list(problems)
         super().__init__("Password is too weak: " + "; ".join(self.problems) + ".")
+
+
+class NotFoundError(AuthError):
+    """Something asked for by id doesn't exist."""
+
+
+class UserNotFoundError(NotFoundError):
+    """No user has that id, username or email."""
+
+
+class DuplicateError(AuthError):
+    """A username or email is already taken."""
+
+
+class DatabaseError(AuthError):
+    """The database couldn't be opened or used."""

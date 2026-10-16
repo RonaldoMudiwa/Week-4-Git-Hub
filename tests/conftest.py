@@ -34,3 +34,13 @@ def fast_hasher():
     from auth import PBKDF2Hasher
 
     return PBKDF2Hasher(iterations=1_000)
+
+
+@pytest.fixture
+def db():
+    """A fresh database in memory for each test. Nothing is written to disk."""
+    from auth import Database
+
+    database = Database()
+    yield database
+    database.close()

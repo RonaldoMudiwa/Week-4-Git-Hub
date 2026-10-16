@@ -8,7 +8,7 @@ SQLite database. This week is about doing security properly.
 
 ## Status
 
-Day 1 of 7. Password hashing and password strength rules.
+Day 2 of 7. Password hashing, password strength rules, and users saved in SQLite.
 
 ## Getting started
 
@@ -70,10 +70,29 @@ policy.check("Purple-Hibiscus-2003", personal=["ronaldo"])   # passes
 Every problem is listed at once, so the user can fix them together. Each
 rule is its own class, so a new rule is a new class added to the list.
 
+## Users
+
+```python
+from auth import Database, SQLiteUserRepository, User
+
+with Database("data/auth.db") as db:
+    users = SQLiteUserRepository(db)
+    users.find_for_login("Ronaldo@Example.com")   # by email or username, any case
+```
+
+- Usernames are 3 to 30 characters, start with a letter, and are saved in
+  lower case. Emails are checked and lower-cased too.
+- `User` only ever holds the password's hash. Its `repr()` leaves the hash
+  out, so it can't leak into a log by accident.
+- The database makes usernames and emails `UNIQUE COLLATE NOCASE`, so
+  "Ronaldo" and "ronaldo" can never be two accounts.
+- The database code follows the same pattern as Week 3: numbered
+  migrations, transactions, and `?` placeholders for every value.
+
 ## Tests
 
 ```bash
-pytest          # 44 tests
+pytest          # 92 tests
 ```
 
 The tests use a hasher with far fewer rounds so they run quickly. The real
