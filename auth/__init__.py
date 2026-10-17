@@ -7,7 +7,11 @@ Sign up, log in and permissions, with passwords stored safely.
 
 from .database import Database
 from .exceptions import (
+    AccountDisabledError,
+    AccountLockedError,
     AuthError,
+    InvalidCredentialsError,
+    LoginError,
     DatabaseError,
     DuplicateError,
     NotFoundError,
@@ -15,6 +19,7 @@ from .exceptions import (
     ValidationError,
     WeakPasswordError,
 )
+from .lockout import LockoutPolicy
 from .password_rules import (
     HasDigit,
     HasLowercase,
@@ -28,12 +33,15 @@ from .password_rules import (
     PasswordRule,
 )
 from .passwords import PasswordHasher, PBKDF2Hasher
+from .service import AuthService
 from .user import User
 from .users import SQLiteUserRepository, UserRepository
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
+    "AuthService",
+    "LockoutPolicy",
     "User",
     "UserRepository",
     "SQLiteUserRepository",
@@ -53,6 +61,10 @@ __all__ = [
     "AuthError",
     "ValidationError",
     "WeakPasswordError",
+    "LoginError",
+    "InvalidCredentialsError",
+    "AccountLockedError",
+    "AccountDisabledError",
     "NotFoundError",
     "UserNotFoundError",
     "DuplicateError",

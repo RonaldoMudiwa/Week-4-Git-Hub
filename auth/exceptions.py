@@ -40,3 +40,23 @@ class DuplicateError(AuthError):
 
 class DatabaseError(AuthError):
     """The database couldn't be opened or used."""
+
+
+class LoginError(AuthError):
+    """Logging in didn't work. Catch this for every reason at once."""
+
+
+class InvalidCredentialsError(LoginError):
+    """Wrong username or password.
+
+    The message never says which one was wrong. Saying "no such user" would
+    tell an attacker which usernames are real.
+    """
+
+
+class AccountLockedError(LoginError):
+    """Too many wrong passwords in a row, so the account is paused for a while."""
+
+
+class AccountDisabledError(LoginError):
+    """An admin has switched this account off."""

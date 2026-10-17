@@ -44,3 +44,19 @@ def db():
     database = Database()
     yield database
     database.close()
+
+
+STRONG = "Purple-Hibiscus-2003"
+
+
+@pytest.fixture
+def service(db, clock, fast_hasher):
+    from auth import AuthService
+
+    return AuthService.open(db, hasher=fast_hasher, clock=clock)
+
+
+@pytest.fixture
+def ronaldo(service):
+    """A registered user: ronaldo / ronaldo@example.com with password STRONG."""
+    return service.register("Ronaldo", "ronaldo@example.com", STRONG)

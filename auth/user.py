@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from .exceptions import ValidationError
+from .lockout import LockoutPolicy
 from .validation import clean_email, clean_username
 
 
@@ -116,6 +117,26 @@ class User:
 
     def is_locked(self, now: datetime) -> bool:
         return self._locked_until is not None and now < self._locked_until
+
+    def record_failed_login(self, now: datetime, policy: LockoutPolicy) -> bool:
+        """Count a wrong password. Returns True if this one locked the account."""
+        self._failed_logins += 1
+        if self._failed_logins >= policy.max_attempts:
+            self._locked_until = now + policy.lock_for
+            # Start counting again once the lock runs out.
+            self._failed_logins = 0
+            return True
+        return False
+
+    def record_successful_login(self, now: datetime) -> None:
+        self._failed_logins = 0
+        self._locked_until = None
+        self._last_login_at = now
+
+    def unlock(self) -> None:
+        """Lift a lock early, e.g. an admin after checking it's really them."""
+        self._failed_logins = 0
+        self._locked_until = None
 
     # ------------------------------------------------------------------
 

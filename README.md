@@ -8,7 +8,8 @@ SQLite database. This week is about doing security properly.
 
 ## Status
 
-Day 2 of 7. Password hashing, password strength rules, and users saved in SQLite.
+Day 3 of 7. Password hashing, password strength rules, users saved in SQLite,
+and signing up, logging in and account lockout.
 
 ## Getting started
 
@@ -89,10 +90,41 @@ with Database("data/auth.db") as db:
 - The database code follows the same pattern as Week 3: numbered
   migrations, transactions, and `?` placeholders for every value.
 
+## Signing up and logging in
+
+```python
+from auth import AuthService, Database
+
+with Database("data/auth.db") as db:
+    service = AuthService.open(db)
+    service.register("ronaldo", "ronaldo@example.com", "Purple-Hibiscus-2003")
+    user = service.login("Ronaldo@Example.com", "Purple-Hibiscus-2003")
+    service.change_password(user.user_id, "Purple-Hibiscus-2003", "Half-Of-A-Yellow-Sun-2006")
+```
+
+Things it does to stay safe:
+
+- **Same answer for a wrong username or a wrong password.** Both say "Wrong
+  username or password." If it said "no such user", an attacker could find
+  out which usernames are real.
+- **Same time too.** An unknown username still runs the slow hash, so it
+  takes as long as a wrong password.
+- **Lockout.** 5 wrong passwords in a row lock the account for 15 minutes.
+  The count resets after a good log in. An admin can unlock early. Both
+  numbers can be changed with `LockoutPolicy`.
+- **Switched off accounts.** Only revealed once the right password is given.
+- **Automatic upgrades.** If the number of hashing rounds goes up, old hashes
+  are re-hashed the next time that person logs in.
+- **Changing a password needs the current one**, and the new one has to pass
+  the rules and be different.
+
+The hasher, password rules, lockout policy and clock are all passed in to
+`AuthService`, so tests can use a quick hasher and pretend time has passed.
+
 ## Tests
 
 ```bash
-pytest          # 92 tests
+pytest          # 119 tests
 ```
 
 The tests use a hasher with far fewer rounds so they run quickly. The real
