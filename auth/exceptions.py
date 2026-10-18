@@ -60,3 +60,15 @@ class AccountLockedError(LoginError):
 
 class AccountDisabledError(LoginError):
     """An admin has switched this account off."""
+
+
+class SessionError(AuthError):
+    """A session token can't be used. Catch this for every reason at once."""
+
+
+class InvalidSessionError(SessionError):
+    """The token doesn't match any session, or it was logged out."""
+
+
+class SessionExpiredError(SessionError):
+    """The session ran out of time. Log in again."""

@@ -60,3 +60,10 @@ def service(db, clock, fast_hasher):
 def ronaldo(service):
     """A registered user: ronaldo / ronaldo@example.com with password STRONG."""
     return service.register("Ronaldo", "ronaldo@example.com", STRONG)
+
+
+@pytest.fixture
+def sessions(db, clock):
+    from auth import SessionManager
+
+    return SessionManager.open(db, clock=clock)

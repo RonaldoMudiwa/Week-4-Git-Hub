@@ -34,6 +34,22 @@ MIGRATIONS: tuple[tuple[str, ...], ...] = (
         )
         """,
     ),
+    # Version 2: login sessions. Only a hash of each token is stored.
+    # CASCADE means deleting a user deletes their sessions too.
+    (
+        """
+        CREATE TABLE sessions (
+            session_id    INTEGER PRIMARY KEY,
+            token_hash    TEXT    NOT NULL UNIQUE,
+            user_id       INTEGER NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
+            created_at    TEXT    NOT NULL,
+            last_seen_at  TEXT    NOT NULL,
+            expires_at    TEXT    NOT NULL,
+            ended_at      TEXT
+        )
+        """,
+        "CREATE INDEX idx_sessions_user ON sessions (user_id, ended_at)",
+    ),
 )
 
 

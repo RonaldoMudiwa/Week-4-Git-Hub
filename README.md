@@ -8,8 +8,8 @@ SQLite database. This week is about doing security properly.
 
 ## Status
 
-Day 3 of 7. Password hashing, password strength rules, users saved in SQLite,
-and signing up, logging in and account lockout.
+Day 4 of 7. Password hashing, password strength rules, users saved in SQLite,
+signing up, logging in, account lockout, and login sessions.
 
 ## Getting started
 
@@ -121,10 +121,36 @@ Things it does to stay safe:
 The hasher, password rules, lockout policy and clock are all passed in to
 `AuthService`, so tests can use a quick hasher and pretend time has passed.
 
+## Sessions
+
+Typing a password for every action would be a pain, so after logging in the
+user gets a session token instead. It works like a festival wristband: show
+it to get in, and it stops working when it runs out or is cut off.
+
+```python
+from auth import SessionManager
+
+sessions = SessionManager.open(db)
+token = sessions.start(user)          # give this to the user
+sessions.authenticate(token)          # -> the User, and resets the idle timer
+sessions.end(token)                   # log out here
+sessions.end_all(user.user_id)        # log out everywhere
+```
+
+- **Tokens are random.** 32 bytes from `secrets`, which is made for security.
+  `random` is predictable and is never used for this.
+- **Only a hash is stored.** If the database leaked, the hashes couldn't be
+  used to log in. A quick SHA-256 is fine here, because random tokens can't
+  be guessed from a list the way passwords can.
+- **Two time limits.** 30 minutes with no activity, or 12 hours in total,
+  whichever comes first. Both can be changed with `SessionPolicy`.
+- **Switching an account off logs it out**, even from sessions already open.
+- **Tidy up.** `purge()` deletes sessions that finished more than 30 days ago.
+
 ## Tests
 
 ```bash
-pytest          # 119 tests
+pytest          # 140 tests
 ```
 
 The tests use a hasher with far fewer rounds so they run quickly. The real

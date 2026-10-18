@@ -11,7 +11,10 @@ from .exceptions import (
     AccountLockedError,
     AuthError,
     InvalidCredentialsError,
+    InvalidSessionError,
     LoginError,
+    SessionError,
+    SessionExpiredError,
     DatabaseError,
     DuplicateError,
     NotFoundError,
@@ -34,14 +37,26 @@ from .password_rules import (
 )
 from .passwords import PasswordHasher, PBKDF2Hasher
 from .service import AuthService
+from .sessions import (
+    Session,
+    SessionManager,
+    SessionPolicy,
+    SessionRepository,
+    SQLiteSessionRepository,
+)
 from .user import User
 from .users import SQLiteUserRepository, UserRepository
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "AuthService",
     "LockoutPolicy",
+    "SessionManager",
+    "SessionPolicy",
+    "Session",
+    "SessionRepository",
+    "SQLiteSessionRepository",
     "User",
     "UserRepository",
     "SQLiteUserRepository",
@@ -65,6 +80,9 @@ __all__ = [
     "InvalidCredentialsError",
     "AccountLockedError",
     "AccountDisabledError",
+    "SessionError",
+    "InvalidSessionError",
+    "SessionExpiredError",
     "NotFoundError",
     "UserNotFoundError",
     "DuplicateError",
