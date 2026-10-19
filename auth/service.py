@@ -20,6 +20,7 @@ from .exceptions import (
 from .lockout import LockoutPolicy
 from .password_rules import PasswordPolicy
 from .passwords import PasswordHasher, PBKDF2Hasher
+from .permissions import ADMIN, USER, RoleRepository, SQLiteRoleRepository
 from .user import User
 from .users import SQLiteUserRepository, UserRepository
 from .validation import clean_email, clean_username
@@ -34,6 +35,7 @@ class AuthService:
     def __init__(
         self,
         users: UserRepository,
+        roles: RoleRepository,
         transaction: TransactionFactory,
         hasher: PasswordHasher | None = None,
         password_policy: PasswordPolicy | None = None,
@@ -41,6 +43,7 @@ class AuthService:
         clock: Clock | None = None,
     ) -> None:
         self._users = users
+        self._roles = roles
         self._transaction = transaction
         self._hasher = hasher or PBKDF2Hasher()
         self._policy = password_policy or PasswordPolicy.default()
@@ -51,7 +54,7 @@ class AuthService:
     @classmethod
     def open(cls, db: Database, **options) -> "AuthService":
         """The normal setup, with users kept in this database."""
-        return cls(SQLiteUserRepository(db), db.transaction, **options)
+        return cls(SQLiteUserRepository(db), SQLiteRoleRepository(db), db.transaction, **options)
 
     @property
     def now(self) -> datetime:
@@ -62,7 +65,10 @@ class AuthService:
     # ------------------------------------------------------------------
 
     def register(self, username: str, email: str, password: str) -> User:
-        """Create an account.
+        """Create an account with the "user" role.
+
+        The very first account also becomes an admin, so someone can manage
+        the system from the start.
 
         Raises:
             ValidationError: If the username or email isn't allowed.
@@ -75,7 +81,13 @@ class AuthService:
         clean_mail = clean_email(email)
         self._policy.check(password, personal=[clean_name, clean_mail])
         user = User(clean_name, clean_mail, self._hasher.hash(password), self.now)
-        return self._users.add(user)
+        with self._transaction():
+            first = not self._users.all()
+            self._users.add(user)
+            self._roles.grant(user.user_id, USER.name, self.now)
+            if first:
+                self._roles.grant(user.user_id, ADMIN.name, self.now)
+        return user
 
     # ------------------------------------------------------------------
     # Logging in

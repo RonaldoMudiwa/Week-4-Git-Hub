@@ -1,0 +1,85 @@
+"""Things only some users are allowed to do, like switching accounts off.
+
+Every method takes actor, the logged in user doing it, and @requires checks
+their permission before anything happens.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Callable, ContextManager
+
+from .database import Database
+from .exceptions import PermissionDeniedError, ValidationError
+from .permissions import ADMIN, AccessControl, Permission, RoleRepository, SQLiteRoleRepository, requires
+from .user import User
+from .users import SQLiteUserRepository, UserRepository
+
+
+class AdminService:
+    def __init__(
+        self,
+        users: UserRepository,
+        roles: RoleRepository,
+        access: AccessControl,
+        transaction: Callable[[], ContextManager[None]],
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
+        self._users = users
+        self._roles = roles
+        self._access = access
+        self._transaction = transaction
+        self._clock = clock or datetime.now
+
+    @classmethod
+    def open(cls, db: Database, clock: Callable[[], datetime] | None = None) -> "AdminService":
+        roles = SQLiteRoleRepository(db)
+        return cls(SQLiteUserRepository(db), roles, AccessControl(roles), db.transaction, clock)
+
+    @requires(Permission.VIEW_USERS)
+    def list_users(self, actor: User) -> list[tuple[User, list[str]]]:
+        """Every user with the names of their roles."""
+        return [(user, sorted(self._roles.roles_for(user.user_id))) for user in self._users.all()]
+
+    @requires(Permission.LOCK_USERS)
+    def deactivate(self, actor: User, user_id: int) -> User:
+        if user_id == actor.user_id:
+            raise ValidationError("You can't switch off your own account.")
+        user = self._users.get(user_id)
+        if ADMIN.name in self._roles.roles_for(user_id) and not self._access.can(
+                actor, Permission.MANAGE_ROLES):
+            raise PermissionDeniedError("Only an admin can switch off another admin.")
+        user.deactivate()
+        self._users.update(user)
+        return user
+
+    @requires(Permission.LOCK_USERS)
+    def activate(self, actor: User, user_id: int) -> User:
+        user = self._users.get(user_id)
+        user.activate()
+        self._users.update(user)
+        return user
+
+    @requires(Permission.LOCK_USERS)
+    def unlock(self, actor: User, user_id: int) -> User:
+        user = self._users.get(user_id)
+        user.unlock()
+        self._users.update(user)
+        return user
+
+    @requires(Permission.MANAGE_ROLES)
+    def grant_role(self, actor: User, user_id: int, role: str) -> bool:
+        """Returns False if they already had it."""
+        name = self._access.registry.get(role).name
+        self._users.get(user_id)
+        return self._roles.grant(user_id, name, self._clock())
+
+    @requires(Permission.MANAGE_ROLES)
+    def revoke_role(self, actor: User, user_id: int, role: str) -> bool:
+        """Returns False if they didn't have it. The last admin can't be removed,
+        or nobody could ever manage roles again."""
+        name = self._access.registry.get(role).name
+        with self._transaction():
+            if name == ADMIN.name and self._roles.users_with(ADMIN.name) == [user_id]:
+                raise ValidationError("That's the last admin. Make someone else admin first.")
+            return self._roles.revoke(user_id, name)

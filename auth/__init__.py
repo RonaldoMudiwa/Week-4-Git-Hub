@@ -5,19 +5,21 @@ Sign up, log in and permissions, with passwords stored safely.
     from auth import PBKDF2Hasher, PasswordPolicy
 """
 
+from .admin import AdminService
 from .database import Database
 from .exceptions import (
     AccountDisabledError,
     AccountLockedError,
     AuthError,
+    DatabaseError,
+    DuplicateError,
     InvalidCredentialsError,
     InvalidSessionError,
     LoginError,
+    NotFoundError,
+    PermissionDeniedError,
     SessionError,
     SessionExpiredError,
-    DatabaseError,
-    DuplicateError,
-    NotFoundError,
     UserNotFoundError,
     ValidationError,
     WeakPasswordError,
@@ -36,6 +38,18 @@ from .password_rules import (
     PasswordRule,
 )
 from .passwords import PasswordHasher, PBKDF2Hasher
+from .permissions import (
+    ADMIN,
+    MODERATOR,
+    USER,
+    AccessControl,
+    Permission,
+    Role,
+    RoleRegistry,
+    RoleRepository,
+    SQLiteRoleRepository,
+    requires,
+)
 from .service import AuthService
 from .sessions import (
     Session,
@@ -47,11 +61,22 @@ from .sessions import (
 from .user import User
 from .users import SQLiteUserRepository, UserRepository
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "AuthService",
     "LockoutPolicy",
+    "AdminService",
+    "AccessControl",
+    "Permission",
+    "Role",
+    "RoleRegistry",
+    "RoleRepository",
+    "SQLiteRoleRepository",
+    "requires",
+    "USER",
+    "MODERATOR",
+    "ADMIN",
     "SessionManager",
     "SessionPolicy",
     "Session",
@@ -83,6 +108,7 @@ __all__ = [
     "SessionError",
     "InvalidSessionError",
     "SessionExpiredError",
+    "PermissionDeniedError",
     "NotFoundError",
     "UserNotFoundError",
     "DuplicateError",

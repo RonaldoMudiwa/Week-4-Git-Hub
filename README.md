@@ -8,8 +8,9 @@ SQLite database. This week is about doing security properly.
 
 ## Status
 
-Day 4 of 7. Password hashing, password strength rules, users saved in SQLite,
-signing up, logging in, account lockout, and login sessions.
+Day 5 of 7. Password hashing, password strength rules, users saved in SQLite,
+signing up, logging in, account lockout, login sessions, and roles and
+permissions.
 
 ## Getting started
 
@@ -147,10 +148,45 @@ sessions.end_all(user.user_id)        # log out everywhere
 - **Switching an account off logs it out**, even from sessions already open.
 - **Tidy up.** `purge()` deletes sessions that finished more than 30 days ago.
 
+## Roles and permissions
+
+A permission is one thing someone can do. A role is a named bundle of them.
+Code only ever checks permissions, never role names, so roles can change
+without touching the checks.
+
+| Role | Can |
+| --- | --- |
+| `user` | See their own profile and change their own password |
+| `moderator` | Everything a user can, plus see every account and switch accounts off, on and unlock them |
+| `admin` | Everything, including giving out roles and reading the audit log |
+
+```python
+from auth import AdminService, Permission, requires
+
+admin = AdminService.open(db)
+admin.grant_role(ronaldo, amara.user_id, "moderator")
+admin.deactivate(amara, tendai.user_id)        # amara is now allowed to do this
+
+class Reports:
+    @requires(Permission.VIEW_USERS)           # checked before the method runs
+    def everyone(self, actor): ...
+```
+
+- Every new account gets `user`. The very first account also gets `admin`,
+  so someone can run the system from the start.
+- `@requires` is a decorator, so the check can't be forgotten inside the
+  method. It runs first, every time.
+- The last admin can't lose the admin role, or nobody could manage roles
+  again. Nobody can switch off their own account, and a moderator can't
+  switch off an admin.
+- A switched off account has no permissions at all, whatever its roles.
+- New roles can be added to a `RoleRegistry` without changing any code that
+  checks permissions.
+
 ## Tests
 
 ```bash
-pytest          # 140 tests
+pytest          # 164 tests
 ```
 
 The tests use a hasher with far fewer rounds so they run quickly. The real

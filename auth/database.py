@@ -50,6 +50,17 @@ MIGRATIONS: tuple[tuple[str, ...], ...] = (
         """,
         "CREATE INDEX idx_sessions_user ON sessions (user_id, ended_at)",
     ),
+    # Version 3: which roles each user has. One row per user per role.
+    (
+        """
+        CREATE TABLE user_roles (
+            user_id     INTEGER NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
+            role        TEXT    NOT NULL,
+            granted_at  TEXT    NOT NULL,
+            PRIMARY KEY (user_id, role)
+        )
+        """,
+    ),
 )
 
 

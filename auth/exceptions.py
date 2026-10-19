@@ -72,3 +72,7 @@ class InvalidSessionError(SessionError):
 
 class SessionExpiredError(SessionError):
     """The session ran out of time. Log in again."""
+
+
+class PermissionDeniedError(AuthError):
+    """The user is logged in but isn't allowed to do this."""
