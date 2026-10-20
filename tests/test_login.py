@@ -117,10 +117,13 @@ class TestLockout:
         clock.advance(minutes=15)
         service.login("ronaldo", STRONG)
 
-    def test_admin_can_unlock(self, service, ronaldo):
-        self.lock(service)
-        service.unlock(1)
-        service.login("ronaldo", STRONG)
+    def test_admin_can_unlock(self, service, ronaldo, admin):
+        service.register("amara", "amara@example.com", STRONG)
+        for _ in range(5):
+            with pytest.raises(LoginError):
+                service.login("amara", "wrong")
+        admin.unlock(ronaldo, 2)
+        service.login("amara", STRONG)
 
     def test_custom_policy(self, db, clock, fast_hasher):
         service = AuthService.open(db, hasher=fast_hasher, clock=clock,

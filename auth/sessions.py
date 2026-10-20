@@ -17,6 +17,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Callable, ContextManager
 
+from .audit import AuditEvent, AuditLog, NullAuditLog, SQLiteAuditLog
 from .database import Database
 from .exceptions import (
     InvalidSessionError,
@@ -24,7 +25,7 @@ from .exceptions import (
     ValidationError,
 )
 from .user import User
-from .users import UserRepository
+from .users import SQLiteUserRepository, UserRepository
 
 TOKEN_BYTES = 32  # 256 random bits, far too many to guess
 
@@ -154,17 +155,19 @@ class SessionManager:
         transaction: Callable[[], ContextManager[None]],
         policy: SessionPolicy | None = None,
         clock: Callable[[], datetime] | None = None,
+        audit: AuditLog | None = None,
     ) -> None:
         self._sessions = sessions
         self._users = users
         self._transaction = transaction
         self._policy = policy or SessionPolicy()
         self._clock = clock or datetime.now
+        self._audit = audit or NullAuditLog()
 
     @classmethod
     def open(cls, db: Database, **options) -> "SessionManager":
-        from .users import SQLiteUserRepository
-
+        """The normal setup, with sessions and the audit log in this database."""
+        options.setdefault("audit", SQLiteAuditLog(db, options.get("clock")))
         return cls(SQLiteSessionRepository(db), SQLiteUserRepository(db), db.transaction, **options)
 
     def start(self, user: User) -> str:
@@ -207,6 +210,7 @@ class SessionManager:
         session = self._find(token)
         if session.ended_at is None:
             self._sessions.update(session.with_changes(ended_at=self._clock()))
+            self._audit.record(AuditEvent.LOGGED_OUT, self._users.get(session.user_id))
 
     def end_all(self, user_id: int) -> int:
         """Log out everywhere, e.g. after a password change. Returns how many ended."""
@@ -215,6 +219,9 @@ class SessionManager:
             open_sessions = self._sessions.open_for_user(user_id)
             for session in open_sessions:
                 self._sessions.update(session.with_changes(ended_at=now))
+            if open_sessions:
+                self._audit.record(AuditEvent.LOGGED_OUT_EVERYWHERE, self._users.get(user_id),
+                                   f"{len(open_sessions)} session(s)")
         return len(open_sessions)
 
     def active_sessions(self, user_id: int) -> list[Session]:

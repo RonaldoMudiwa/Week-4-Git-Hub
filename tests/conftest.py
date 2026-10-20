@@ -53,7 +53,7 @@ STRONG = "Purple-Hibiscus-2003"
 def service(db, clock, fast_hasher):
     from auth import AuthService
 
-    return AuthService.open(db, hasher=fast_hasher, clock=clock)
+    return AuthService.open(db, clock, hasher=fast_hasher)
 
 
 @pytest.fixture

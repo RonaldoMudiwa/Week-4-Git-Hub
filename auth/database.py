@@ -61,6 +61,31 @@ MIGRATIONS: tuple[tuple[str, ...], ...] = (
         )
         """,
     ),
+    # Version 4: password reset links and the audit log. The audit log has
+    # no foreign key on purpose, so history stays even if a user is deleted.
+    (
+        """
+        CREATE TABLE reset_tokens (
+            reset_id    INTEGER PRIMARY KEY,
+            token_hash  TEXT    NOT NULL UNIQUE,
+            user_id     INTEGER NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
+            created_at  TEXT    NOT NULL,
+            expires_at  TEXT    NOT NULL,
+            used_at     TEXT
+        )
+        """,
+        """
+        CREATE TABLE audit_log (
+            event_id     INTEGER PRIMARY KEY,
+            happened_at  TEXT    NOT NULL,
+            event        TEXT    NOT NULL,
+            user_id      INTEGER,
+            username     TEXT,
+            details      TEXT    NOT NULL DEFAULT ''
+        )
+        """,
+        "CREATE INDEX idx_audit_user ON audit_log (user_id, happened_at)",
+    ),
 )
 
 

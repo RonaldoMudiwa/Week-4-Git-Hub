@@ -6,6 +6,7 @@ Sign up, log in and permissions, with passwords stored safely.
 """
 
 from .admin import AdminService
+from .audit import AuditEntry, AuditEvent, AuditLog, NullAuditLog, SQLiteAuditLog
 from .database import Database
 from .exceptions import (
     AccountDisabledError,
@@ -18,6 +19,7 @@ from .exceptions import (
     LoginError,
     NotFoundError,
     PermissionDeniedError,
+    ResetTokenError,
     SessionError,
     SessionExpiredError,
     UserNotFoundError,
@@ -50,6 +52,7 @@ from .permissions import (
     SQLiteRoleRepository,
     requires,
 )
+from .reset import ResetToken, ResetTokenRepository, SQLiteResetTokenRepository
 from .service import AuthService
 from .sessions import (
     Session,
@@ -61,12 +64,20 @@ from .sessions import (
 from .user import User
 from .users import SQLiteUserRepository, UserRepository
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "AuthService",
     "LockoutPolicy",
     "AdminService",
+    "AuditLog",
+    "AuditEvent",
+    "AuditEntry",
+    "NullAuditLog",
+    "SQLiteAuditLog",
+    "ResetToken",
+    "ResetTokenRepository",
+    "SQLiteResetTokenRepository",
     "AccessControl",
     "Permission",
     "Role",
@@ -109,6 +120,7 @@ __all__ = [
     "InvalidSessionError",
     "SessionExpiredError",
     "PermissionDeniedError",
+    "ResetTokenError",
     "NotFoundError",
     "UserNotFoundError",
     "DuplicateError",

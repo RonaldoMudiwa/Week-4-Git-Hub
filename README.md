@@ -8,9 +8,9 @@ SQLite database. This week is about doing security properly.
 
 ## Status
 
-Day 5 of 7. Password hashing, password strength rules, users saved in SQLite,
-signing up, logging in, account lockout, login sessions, and roles and
-permissions.
+Day 6 of 7. Password hashing, password strength rules, users saved in SQLite,
+signing up, logging in, account lockout, login sessions, roles and
+permissions, password reset and an audit log.
 
 ## Getting started
 
@@ -183,10 +183,44 @@ class Reports:
 - New roles can be added to a `RoleRegistry` without changing any code that
   checks permissions.
 
+## Forgotten passwords
+
+```python
+token = service.request_password_reset("ronaldo@example.com")   # a real app emails this as a link
+service.reset_password(token, "Half-Of-A-Yellow-Sun-2006")
+```
+
+- The token is random and only its hash is stored, like sessions.
+- It works once, for one hour. Asking again cancels the older link.
+- A wrong, used or old token all give the same message.
+- An unknown email returns `None` instead of an error. Whatever shows this
+  to the public should say "if that email is registered, a link is on its
+  way" either way, so nobody can use it to check who has an account.
+- Resetting unlocks the account. Resetting or changing a password logs the
+  user out everywhere, in case someone else was logged in as them.
+
+## Audit log
+
+Every sign up, log in, failed log in, lockout, log out, password change,
+reset and admin action is written to the `audit_log` table with the time and
+who it was about. Admins can read it:
+
+```python
+for entry in admin.audit_log(ronaldo, limit=20):
+    print(entry)
+# 2026-10-15 09:00:00  login_failed          amara  wrong password
+```
+
+Passwords and tokens are never written to the log. When someone tries to log
+in as a name that doesn't exist, the name isn't written either, because
+people sometimes type their password into the username box by mistake.
+Code that records events never checks whether there is a log: a
+`NullAuditLog` that does nothing is used when no log is wanted.
+
 ## Tests
 
 ```bash
-pytest          # 164 tests
+pytest          # 190 tests
 ```
 
 The tests use a hasher with far fewer rounds so they run quickly. The real

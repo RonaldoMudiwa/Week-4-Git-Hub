@@ -76,3 +76,10 @@ class SessionExpiredError(SessionError):
 
 class PermissionDeniedError(AuthError):
     """The user is logged in but isn't allowed to do this."""
+
+
+class ResetTokenError(AuthError):
+    """A password reset link is wrong, used already, or too old.
+
+    One message for all three, so a guesser learns nothing.
+    """
