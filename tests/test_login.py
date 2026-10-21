@@ -192,3 +192,18 @@ class TestChangePassword:
 def test_default_settings(db):
     service = AuthService.open(db)
     assert service.now <= datetime.now()
+
+
+def test_fake_hash_is_only_made_once(db, clock):
+    class CountingHasher(PBKDF2Hasher):
+        made = 0
+
+        def hash(self, password):
+            CountingHasher.made += 1
+            return super().hash(password)
+
+    service = AuthService.open(db, clock, hasher=CountingHasher(1_000))
+    for _ in range(3):
+        with pytest.raises(InvalidCredentialsError):
+            service.login("ghost", "anything")
+    assert CountingHasher.made == 1

@@ -27,6 +27,7 @@ from .exceptions import (
     WeakPasswordError,
 )
 from .lockout import LockoutPolicy
+from .mail import FileMailer, Mailer, MemoryMailer
 from .password_rules import (
     HasDigit,
     HasLowercase,
@@ -64,12 +65,15 @@ from .sessions import (
 from .user import User
 from .users import SQLiteUserRepository, UserRepository
 
-__version__ = "0.6.0"
+__version__ = "1.0.0"
 
 __all__ = [
     "AuthService",
     "LockoutPolicy",
     "AdminService",
+    "Mailer",
+    "FileMailer",
+    "MemoryMailer",
     "AuditLog",
     "AuditEvent",
     "AuditEntry",

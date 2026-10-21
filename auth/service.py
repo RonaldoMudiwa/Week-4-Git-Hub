@@ -18,6 +18,7 @@ from .exceptions import (
     AccountLockedError,
     InvalidCredentialsError,
     ResetTokenError,
+    UserNotFoundError,
     ValidationError,
 )
 from .lockout import LockoutPolicy
@@ -229,6 +230,13 @@ class AuthService:
 
     def get_user(self, user_id: int) -> User:
         return self._users.get(user_id)
+
+    def find_user(self, username: str) -> User:
+        """Look someone up by username. Raises UserNotFoundError if there's no such user."""
+        user = self._users.find_by_username(username)
+        if user is None:
+            raise UserNotFoundError(f"No user called {str(username).strip().lower()!r}.")
+        return user
 
     @property
     def users(self) -> list[User]:

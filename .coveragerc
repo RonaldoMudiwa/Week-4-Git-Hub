@@ -1,0 +1,9 @@
+# Settings for "pytest --cov". Only the app's own code is measured.
+[run]
+source = auth
+branch = True
+
+[report]
+show_missing = True
+# The run fails if coverage ever drops below this.
+fail_under = 95
